@@ -115,7 +115,7 @@ USE_TZ = True
 
 LANGUAGE_CODE = 'ru-RU'
 
-TIME_ZONE = 'UTS'
+TIME_ZONE = 'Europe/Moscow'
 
 # STATIC
 STATIC_URL = '/static/'
