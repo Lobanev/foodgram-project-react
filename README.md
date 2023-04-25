@@ -19,3 +19,26 @@ python3 -m venv venv
 python -m venv venv
 source venv/bin/activate
 source venv/Scripts/activate
+```
+- Установите зависимости из файла requirements.txt
+```
+pip install -r requirements.txt
+``` 
+- Перейдите в папку yatube_api и выполните:
+
+Миграции
+```
+python manage.py makemigrations
+python manage.py migrate
+```
+Запустите сервер
+```
+python manage.py runserver
+```
+### Документация:
+После запуска на localhost доступна [документация](http://127.0.0.1:8000/redoc/).
+
+
+### Автор
+
+Лобанев Александр [Telegram](https:/пш/t.me/Djakomo13) 
