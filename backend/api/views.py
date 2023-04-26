@@ -11,7 +11,7 @@ from rest_framework.permissions import (AllowAny, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 
-from recipes.models import (Ingredient, Recipe, RecipeIngredient,
+from recipes.models import (Ingredient, FavoriteRecipe, Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
 from users.models import Follow, User
 
@@ -54,11 +54,17 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend, )
 
     def get_serializer_class(self):
+        """
+        Возвращает класс сериализатора, соответствующий типу запроса.
+        """
         if self.request.method in ('POST', 'PATCH', ):
             return RecipeReadSerializer
         return CreateRecipeSerializer
 
     def _user_recipes_controller(self, request, pk, model):
+        """
+        Обрабатывает запросы для списка рецептов пользователя.
+        """
         recipe = get_object_or_404(Recipe, pk=pk)
         user = request.user
         is_exists = model.objects.filter(user=user, recipe=recipe).exists()
@@ -83,6 +89,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(methods=['POST', 'DELETE'], detail=True,
             permission_classes=[IsAuthenticated])
     def favorite(self, request, pk):
+        """
+           Добавляет рецепт в список избранных для текущего пользователя.
+        """
         context = {"request": request}
         recipe = get_object_or_404(Recipe, id=pk)
         data = {
@@ -94,14 +103,31 @@ class RecipeViewSet(viewsets.ModelViewSet):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @staticmethod
+    def favorite_delete(self, request, pk):
+        """
+        Удаляет рецепт из списка избранных для текущего пользователя.
+        """
+        favorite = get_object_or_404(
+            FavoriteRecipe, user=request.user, recipe_id=pk
+        )
+        favorite.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     @action(methods=['POST', 'DELETE'], detail=True,
             permission_classes=[IsAuthenticated])
     def shopping_cart(self, request, pk):
+        """
+        Возвращает список рецептов, добавленных в корзину пользователя с идентификатором pk.
+        """
         return self._user_recipes_controller(request, pk, ShoppingCart)
 
     @action(methods=['GET'], detail=False,
             permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
+        """
+        Генерирует PDF-файл со списком ингредиентов для рецептов из корзины пользователя.
+        """
         shop_recipes_ids = request.user.shoprecipes.all().values('recipe')
         ingredients = (
             RecipeIngredient.objects
@@ -131,6 +157,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 
 class FollowViewSet(UserViewSet):
+    """
+    Класс представления для подписок пользователей на других пользователей.
+    """
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
     pagination_class = CustomPagination
@@ -141,6 +170,11 @@ class FollowViewSet(UserViewSet):
         permission_classes=[IsAuthenticated],
     )
     def subscribe(self, request, pk):
+        """
+        Подписывает пользователя request.user на пользователя с идентификатором pk,
+        если метод POST, или отписывает пользователя request.user от пользователя с идентификатором pk,
+        если метод DELETE.
+        """
         user = request.user
         author = get_object_or_404(User, pk=pk)
 
@@ -160,6 +194,9 @@ class FollowViewSet(UserViewSet):
 
     @action(detail=False, permission_classes=[IsAuthenticated])
     def subscriptions(self, request):
+        """
+        Возвращает список пользователей, на которых подписан пользователь request.user.
+        """
         user = request.user
         queryset = User.objects.filter(following__user=user)
         pages = self.paginate_queryset(queryset)
