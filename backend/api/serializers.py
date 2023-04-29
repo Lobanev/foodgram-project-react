@@ -232,7 +232,7 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
             )
 
         cook_message = 'Время готовки должно быть не меньше одной минуты'
-        if not data['cooking_time'] or int(data['cooking_time']) < 0:
+        if 'cooking_time' not in data or int(data['cooking_time']) <= 0:
             raise serializers.ValidationError(
                 {'cooking_time': cook_message}
             )
