@@ -3,11 +3,11 @@ from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers, status
-from rest_framework.validators import ValidationError
 from rest_framework.fields import SerializerMethodField
+from rest_framework.validators import ValidationError
 
-from recipes.models import (FavoriteRecipe, Ingredient, Recipe, RecipeIngredient,
-                            ShoppingCart, Tag)
+from recipes.models import (FavoriteRecipe, Ingredient, Recipe,
+                            RecipeIngredient, ShoppingCart, Tag)
 from users.models import User
 
 
@@ -26,8 +26,7 @@ class CustomUserCreateSerializer(UserCreateSerializer):
         """
         Метод для создания нового пользователя.
         """
-        user = User.objects.create_user(**validated_data)
-        return user
+        return User.objects.create_user(**validated_data)
 
 
 class CustomUserSerializer(UserSerializer):
@@ -41,7 +40,8 @@ class CustomUserSerializer(UserSerializer):
 
     def get_is_subscribed(self, obj):
         """
-        Метод для определения, подписан ли пользователь на текущего пользователя.
+        Метод для определения, подписан ли пользователь
+        на текущего пользователя.
         """
         user = self.context['request'].user
         if user.is_anonymous:
@@ -80,7 +80,9 @@ class FollowSerializer(CustomUserSerializer):
     recipes = SerializerMethodField()
 
     class Meta(CustomUserSerializer.Meta):
-        fields = CustomUserCreateSerializer.Meta.fields + ('recipes_count', 'recipes')
+        fields = CustomUserCreateSerializer.Meta.fields + (
+            'recipes_count', 'recipes'
+        )
         read_only_fields = ('email', 'username', 'first_name', 'last_name')
 
     def validate(self, data):
@@ -112,7 +114,9 @@ class FollowSerializer(CustomUserSerializer):
         recipes = obj.recipes.all()
         if limit:
             recipes = recipes[: int(limit)]
-        serializer = RecipeSnippetSerializer(recipes, many=True, read_only=True)
+        serializer = RecipeSnippetSerializer(
+            recipes, many=True, read_only=True
+        )
         return serializer.data
 
     def get_recipes_count(self, obj):
@@ -164,7 +168,8 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, obj):
         """
-        Метод для определения, добавлен ли рецепт в избранное текущим пользователем.
+        Метод для определения, добавлен ли рецепт в избранное
+        текущим пользователем.
         """
         request = self.context.get('request')
         if request.user.is_anonymous:
@@ -174,7 +179,8 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
     def get_is_in_shopping_cart(self, obj):
         """
-        Метод для определения, добавлен ли рецепт в корзину покупок текущим пользователем.
+        Метод для определения, добавлен ли рецепт в корзину
+        покупок текущим пользователем.
         """
         request = self.context.get('request')
         if request.user.is_anonymous:
@@ -321,7 +327,8 @@ class FavoriteSerializer(serializers.ModelSerializer):
         if not request or request.user.is_anonymous:
             return False
         recipe = data['recipe']
-        if FavoriteRecipe.objects.filter(user=request.user, recipe=recipe).exists():
+        if FavoriteRecipe.objects.filter(user=request.user,
+                                         recipe=recipe).exists():
             raise ValidationError({
                 'errors': 'Рецепт уже добавлен в избранное.'
             })

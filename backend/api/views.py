@@ -1,9 +1,9 @@
 import datetime
 
 from django.db.models import Sum
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from django.http import FileResponse
 from djoser.views import UserViewSet
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -11,18 +11,17 @@ from rest_framework.permissions import (AllowAny, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 
-from recipes.models import (Ingredient, FavoriteRecipe, Recipe, RecipeIngredient,
-                            ShoppingCart, Tag)
+from recipes.models import (FavoriteRecipe, Ingredient, Recipe,
+                            RecipeIngredient, ShoppingCart, Tag)
 from users.models import Follow, User
 
 from .filters import IngredientFilter, RecipeFilter
 from .pagination import CustomPagination
 from .permissions import AuthorPermission
-from .serializers import (CreateRecipeSerializer, FavoriteSerializer,
+from .serializers import (CreateRecipeSerializer, CustomUserSerializer,
+                          FavoriteSerializer, FollowSerializer,
                           IngredientSerializer, RecipeReadSerializer,
-                          ShoppingCartSerializer, FollowSerializer,
-                          TagSerializer, CustomUserSerializer)
-
+                          ShoppingCartSerializer, TagSerializer)
 from .utils import PDFGenerator
 
 
@@ -75,7 +74,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             model.objects.create(recipe=recipe, user=request.user)
-            serializer = ShoppingCartSerializer(recipe, context={'request': request})
+            serializer = ShoppingCartSerializer(
+                recipe, context={'request': request}
+            )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         if not is_exists:
             return Response(
@@ -118,7 +119,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
             permission_classes=[IsAuthenticated])
     def shopping_cart(self, request, pk):
         """
-        Возвращает список рецептов, добавленных в корзину пользователя с идентификатором pk.
+        Возвращает список рецептов,
+        добавленных в корзину пользователя
+        с идентификатором pk.
         """
         return self._user_recipes_controller(request, pk, ShoppingCart)
 
@@ -126,7 +129,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
             permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
         """
-        Генерирует PDF-файл со списком ингредиентов для рецептов из корзины пользователя.
+        Генерирует PDF-файл со списком ингредиентов
+        для рецептов из корзины пользователя.
         """
         shop_recipes_ids = request.user.shoprecipes.all().values('recipe')
         ingredients = (
@@ -171,8 +175,10 @@ class FollowViewSet(UserViewSet):
     )
     def subscribe(self, request, pk):
         """
-        Подписывает пользователя request.user на пользователя с идентификатором pk,
-        если метод POST, или отписывает пользователя request.user от пользователя с идентификатором pk,
+        Подписывает пользователя request.user на
+        пользователя с идентификатором pk,
+        если метод POST, или отписывает пользователя
+        request.user от пользователя с идентификатором pk,
         если метод DELETE.
         """
         user = request.user
@@ -195,7 +201,8 @@ class FollowViewSet(UserViewSet):
     @action(detail=False, permission_classes=[IsAuthenticated])
     def subscriptions(self, request):
         """
-        Возвращает список пользователей, на которых подписан пользователь request.user.
+        Возвращает список пользователей,
+        на которых подписан пользователь request.user.
         """
         user = request.user
         queryset = User.objects.filter(following__user=user)

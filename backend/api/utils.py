@@ -1,16 +1,17 @@
-from io import BytesIO
 from datetime import date
+from io import BytesIO
 
-from django.http import HttpResponseBadRequest, HttpResponse
-from reportlab.pdfgen.canvas import Canvas
-from reportlab.lib.pagesizes import letter, landscape
+from django.http import HttpResponse, HttpResponseBadRequest
+from reportlab.lib.pagesizes import landscape, letter
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen.canvas import Canvas
 
 
 class PDFGenerator:
     def __init__(self, filename: str, fontname: str = 'Bonche-Light',
-                 fontpath: str = 'Bonche-Light.ttf', pagesize: tuple = landscape(letter)):
+                 fontpath: str = 'Bonche-Light.ttf',
+                 pagesize: tuple = landscape(letter)):
         self.buffer = BytesIO()
         self.filename = filename
         self.fontname = fontname
@@ -21,18 +22,21 @@ class PDFGenerator:
     def _register_font(self):
         pdfmetrics.registerFont(TTFont(self.fontname, self.fontpath, 'UTF-8'))
 
-    def _draw_header(self, text: str, size: int = 20, x: int = 250, y: int = 600):
+    def _draw_header(self, text: str, size: int = 20, x: int = 250,
+                     y: int = 600):
         self.canvas.setFont(self.fontname, size)
         self.canvas.drawString(x, y, text)
 
-    def _draw_body(self, text_list: list, size: int = 14, x: int = 75, y: int = 560,
+    def _draw_body(self, text_list: list, size: int = 14,
+                   x: int = 75, y: int = 560,
                    line_step: int = 20):
         self.canvas.setFont(self.fontname, size)
         for text in text_list:
             self.canvas.drawString(x, y, text)
             y -= line_step
 
-    def _draw_footer(self, text: str, size: int = 10, x: int = 255, y: int = 50):
+    def _draw_footer(self, text: str, size: int = 10,
+                     x: int = 255, y: int = 50):
         self.canvas.setFont(self.fontname, size)
         self.canvas.drawString(x, y, text)
 
@@ -54,7 +58,7 @@ class PDFGenerator:
         self.buffer.seek(0)
         return self.buffer
 
-    def download_pdf(request):
+    def download_pdf(self, request):
         shopping_list = request.GET.get('items')
         if not shopping_list:
             return HttpResponseBadRequest('Parameter <items> is required.')
@@ -62,6 +66,8 @@ class PDFGenerator:
         pdf_generator = PDFGenerator('shopping_list.pdf')
         pdf_buffer = pdf_generator.generate(shopping_list.split('\n'))
 
-        response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename={pdf_generator.filename}'
+        response = HttpResponse(pdf_buffer.read(),
+                                content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment;' \
+                                          f'filename={pdf_generator.filename}'
         return response
