@@ -243,6 +243,7 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
                 {'cooking_time': cook_message}
             )
         return data
+
     def create_ingredients(self, ingredients, recipe):
         """
         Метод для создания связи между ингредиентами и рецептом.
