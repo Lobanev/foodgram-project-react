@@ -242,7 +242,7 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {'cooking_time': cook_message}
             )
-
+        return data
     def create_ingredients(self, ingredients, recipe):
         """
         Метод для создания связи между ингредиентами и рецептом.
@@ -297,21 +297,17 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         fields = ('user', 'recipe')
 
     def validate(self, data):
-        request = self.context.get('request')
-        recipe = data['recipe']
-        if ShoppingCart.objects.filter(
-                user=request.user, recipe=recipe
-        ).exists():
-            raise ValidationError({
-                'errors': 'Рецепт уже добавлен в корзину.'
-            })
+        user = data['user']
+        if user.shopping_list.filter(recipe=data['recipe']).exists():
+            raise serializers.ValidationError(
+                'Рецепт уже добавлен в корзину'
+            )
         return data
 
     def to_representation(self, instance):
-        request = self.context.get('request')
         return RecipeSnippetSerializer(
             instance.recipe,
-            context={'request': request}
+            context={'request': self.context.get('request')}
         ).data
 
 
