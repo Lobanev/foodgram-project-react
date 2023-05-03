@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from drf_extra_fields.fields import Base64ImageField
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers, status
 from rest_framework.fields import SerializerMethodField
@@ -8,8 +9,6 @@ from rest_framework.validators import ValidationError
 from recipes.models import (FavoriteRecipe, Ingredient, Recipe,
                             RecipeIngredient, ShoppingCart, Tag)
 from users.models import User
-
-from .utils import Base64ImageField
 
 
 class CustomUserCreateSerializer(UserCreateSerializer):
@@ -37,7 +36,7 @@ class CustomUserSerializer(UserSerializer):
     class Meta:
         model = User
         fields = ('email', 'id', 'username', 'first_name',
-                  'last_name', 'is_subscribed', )
+                  'last_name', 'is_subscribed',)
 
     def get_is_subscribed(self, obj):
         """
@@ -63,7 +62,7 @@ class IngredientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ingredient
-        fields = ('id', 'name', 'measurement_unit', )
+        fields = ('id', 'name', 'measurement_unit',)
 
 
 class RecipeSnippetSerializer(serializers.ModelSerializer):
