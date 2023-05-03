@@ -52,13 +52,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = CreateRecipeSerializer
     filter_backends = (DjangoFilterBackend, )
 
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+    
     def get_serializer_class(self):
         """
         Возвращает класс сериализатора, соответствующий типу запроса.
         """
         if self.request.method in ('POST', 'PATCH', ):
-            return RecipeReadSerializer
-        return CreateRecipeSerializer
+            return CreateRecipeSerializer
+        return RecipeReadSerializer
 
     def _user_recipes_controller(self, request, pk, model):
         """

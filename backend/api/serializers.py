@@ -1,7 +1,6 @@
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
-from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers, status
 from rest_framework.fields import SerializerMethodField
 from rest_framework.validators import ValidationError
@@ -9,6 +8,8 @@ from rest_framework.validators import ValidationError
 from recipes.models import (FavoriteRecipe, Ingredient, Recipe,
                             RecipeIngredient, ShoppingCart, Tag)
 from users.models import User
+
+from .utils import Base64ImageField
 
 
 class CustomUserCreateSerializer(UserCreateSerializer):
@@ -128,7 +129,7 @@ class FollowSerializer(CustomUserSerializer):
 
 class IngredientRecipeSerializer(serializers.ModelSerializer):
     """Сериализатор количества игредиента для рецепта."""
-    id = serializers.ReadOnlyField(source='ingredient.id')
+    id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
     name = serializers.ReadOnlyField(source='ingredient.name')
     measurement_unit = serializers.ReadOnlyField(
         source='ingredient.measurement_unit'
@@ -244,17 +245,21 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
             )
         return data
 
-    def create_ingredients(self, ingredients, recipe):
+    def create_ingredients(self, recipe, ingredients):
         """
         Метод для создания связи между ингредиентами и рецептом.
         """
-        RecipeIngredient.objects.bulk_create(
-            [RecipeIngredient(
-                ingredient=Ingredient.objects.get(id=ingredient['id']),
-                recipe=recipe,
-                amount=ingredient['amount']
-            ) for ingredient in ingredients]
-        )
+
+        ingredient_list = []
+        for ingredient_data in ingredients:
+            ingredient_list.append(
+                RecipeIngredient(
+                    ingredient=ingredient_data.pop('id'),
+                    amount=ingredient_data.pop('amount'),
+                    recipe=recipe,
+                )
+            )
+        RecipeIngredient.objects.bulk_create(ingredient_list)
 
     @transaction.atomic()
     def create(self, validated_data):
