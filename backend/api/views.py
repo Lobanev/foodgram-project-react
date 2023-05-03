@@ -54,7 +54,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
-    
+
     def get_serializer_class(self):
         """
         Возвращает класс сериализатора, соответствующий типу запроса.
