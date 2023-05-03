@@ -1,4 +1,4 @@
-![example workflow](https://github.com/Lobanev/foodgram-project-react/actions/workflows/foodgram_workflow.yml/badge.svg?branch=master&event=push)
+![example workflow](https://github.com/Lobanev/foodgram-project-react/actions/workflows/foodgram_workflowse.yml/badge.svg?branch=master&event=push)
 ### Опиание проекта!
 Приложение «Продуктовый помощник»: сайт, на котором пользователи будут публиковать рецепты,
 добавлять чужие рецепты в избранное и подписываться на публикации других авторов. 
