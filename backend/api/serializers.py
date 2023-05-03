@@ -36,7 +36,7 @@ class CustomUserSerializer(UserSerializer):
     class Meta:
         model = User
         fields = ('email', 'id', 'username', 'first_name',
-                  'last_name', 'is_subscribed',)
+                  'last_name', 'is_subscribed', )
 
     def get_is_subscribed(self, obj):
         """
@@ -62,7 +62,7 @@ class IngredientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ingredient
-        fields = ('id', 'name', 'measurement_unit',)
+        fields = ('id', 'name', 'measurement_unit', )
 
 
 class RecipeSnippetSerializer(serializers.ModelSerializer):
