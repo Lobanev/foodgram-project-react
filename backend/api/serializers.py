@@ -248,17 +248,13 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         """
         Метод для создания связи между ингредиентами и рецептом.
         """
-
-        ingredient_list = []
-        for ingredient_data in ingredients:
-            ingredient_list.append(
-                RecipeIngredient(
-                    ingredient=ingredient_data.pop('id'),
-                    amount=ingredient_data.pop('amount'),
-                    recipe=recipe,
-                )
-            )
-        RecipeIngredient.objects.bulk_create(ingredient_list)
+        RecipeIngredient.objects.bulk_create(
+            [RecipeIngredient(
+                ingredient=Ingredient.objects.get(id=ingredient['id']),
+                recipe=recipe,
+                amount=ingredient['amount']
+            ) for ingredient in ingredients]
+        )
 
     @transaction.atomic()
     def create(self, validated_data):
