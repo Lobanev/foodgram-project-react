@@ -90,35 +90,26 @@ class RecipeViewSet(viewsets.ModelViewSet):
         user_recipes.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(methods=['POST', 'DELETE'], detail=True,
+    @action(methods=['post', 'delete'], detail=True,
             permission_classes=[IsAuthenticated])
     def favorite(self, request, pk):
         """
            Добавляет рецепт в список избранных для текущего пользователя.
         """
-        context = {"request": request}
         recipe = get_object_or_404(Recipe, id=pk)
-        data = {
-            'user': request.user.id,
-            'recipe': recipe.id
-        }
-        serializer = FavoriteSerializer(data=data, context=context)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        if request.method == "POST":
+            favorite, created = FavoriteRecipe.objects.get_or_create(user=request.user, recipe=recipe)
+            if created:
+                return Response(status=status.HTTP_201_CREATED)
+            return Response({'detail':'Такая запись уже есть в избранном'}, status.HTTP_400_BAD_REQUEST)
+        else:
+            favorite_recipe = FavoriteRecipe.objects.filter(user=request.user, recipe=recipe)
+            if favorite_recipe.exists():
+                favorite_recipe.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response({'detail':'Запись не в избранном'}, status.HTTP_400_BAD_REQUEST)
 
-    @staticmethod
-    def favorite_delete(self, request, pk):
-        """
-        Удаляет рецепт из списка избранных для текущего пользователя.
-        """
-        favorite = get_object_or_404(
-            FavoriteRecipe, user=request.user, recipe_id=pk
-        )
-        favorite.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    @action(methods=['POST', 'DELETE'], detail=True,
+    @action(methods=['post', 'delete'], detail=True,
             permission_classes=[IsAuthenticated])
     def shopping_cart(self, request, pk):
         """
@@ -126,8 +117,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
         добавленных в корзину пользователя
         с идентификатором pk.
         """
-        return self._user_recipes_controller(request, pk, ShoppingCart)
-
+        recipe = get_object_or_404(Recipe, id=pk)
+        if request.method == "POST":
+            shop, created = ShoppingCart.objects.get_or_create(user=request.user, recipe=recipe)
+            if created:
+                return Response(status=status.HTTP_201_CREATED)
+            return Response({'detail':'Такая запись уже есть в корзине'}, status.HTTP_400_BAD_REQUEST)
+        else:
+            shopping_cart = ShoppingCart.objects.filter(user=request.user, recipe=recipe)
+            if shopping_cart.exists():
+                shopping_cart.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response({'detail':'Запись нет в корзине'}, status.HTTP_400_BAD_REQUEST)
+        
     @action(methods=['GET'], detail=False,
             permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):

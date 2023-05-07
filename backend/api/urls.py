@@ -3,6 +3,8 @@ from rest_framework import routers
 
 from .views import FollowViewSet, IngredientViewSet, RecipeViewSet, TagViewSet
 
+app_name ='api'
+
 router_v1 = routers.DefaultRouter()
 router_v1.register(r'users', FollowViewSet, basename='follows')
 router_v1.register(r'ingredients', IngredientViewSet, basename='ingredients')

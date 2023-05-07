@@ -306,10 +306,7 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         return data
 
     def to_representation(self, instance):
-        return RecipeSnippetSerializer(
-            instance.recipe,
-            context={'request': self.context.get('request')}
-        ).data
+        return RecipeSnippetSerializer(instance, context=self.context).data
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
