@@ -19,9 +19,8 @@ from .filters import IngredientFilter, RecipeFilter
 from .pagination import CustomPagination
 from .permissions import AuthorPermission
 from .serializers import (CreateRecipeSerializer, CustomUserSerializer,
-                          FavoriteSerializer, FollowSerializer,
-                          IngredientSerializer, RecipeReadSerializer,
-                          ShoppingCartSerializer, TagSerializer)
+                          FollowSerializer, IngredientSerializer,
+                          RecipeReadSerializer, TagSerializer)
 from .utils import PDFGenerator
 
 
@@ -63,33 +62,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return CreateRecipeSerializer
         return RecipeReadSerializer
 
-    def _user_recipes_controller(self, request, pk, model):
-        """
-        Обрабатывает запросы для списка рецептов пользователя.
-        """
-        recipe = get_object_or_404(Recipe, pk=pk)
-        user = request.user
-        is_exists = model.objects.filter(user=user, recipe=recipe).exists()
-        if request.method == 'POST':
-            if is_exists:
-                return Response(
-                    {'errors': 'Рецепт уже в списке.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            model.objects.create(recipe=recipe, user=request.user)
-            serializer = ShoppingCartSerializer(
-                recipe, context={'request': request}
-            )
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        if not is_exists:
-            return Response(
-                {'errors': 'Рецепт не в списке.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        user_recipes = model.objects.filter(user=user, recipe=recipe)
-        user_recipes.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
     @action(methods=['post', 'delete'], detail=True,
             permission_classes=[IsAuthenticated])
     def favorite(self, request, pk):
@@ -98,16 +70,24 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """
         recipe = get_object_or_404(Recipe, id=pk)
         if request.method == "POST":
-            favorite, created = FavoriteRecipe.objects.get_or_create(user=request.user, recipe=recipe)
+            favorite, created = FavoriteRecipe.objects.get_or_create(
+                user=request.user, recipe=recipe
+            )
             if created:
                 return Response(status=status.HTTP_201_CREATED)
-            return Response({'detail':'Такая запись уже есть в избранном'}, status.HTTP_400_BAD_REQUEST)
-        else:
-            favorite_recipe = FavoriteRecipe.objects.filter(user=request.user, recipe=recipe)
-            if favorite_recipe.exists():
-                favorite_recipe.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response({'detail':'Запись не в избранном'}, status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Такая запись уже есть в избранном'},
+                            status.HTTP_400_BAD_REQUEST
+                            )
+
+        favorite_recipe = FavoriteRecipe.objects.filter(
+            user=request.user, recipe=recipe
+        )
+        if favorite_recipe.exists():
+            favorite_recipe.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({'detail': 'Запись не в избранном'},
+                        status.HTTP_400_BAD_REQUEST
+                        )
 
     @action(methods=['post', 'delete'], detail=True,
             permission_classes=[IsAuthenticated])
@@ -119,17 +99,25 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """
         recipe = get_object_or_404(Recipe, id=pk)
         if request.method == "POST":
-            shop, created = ShoppingCart.objects.get_or_create(user=request.user, recipe=recipe)
+            shop, created = ShoppingCart.objects.get_or_create(
+                user=request.user, recipe=recipe
+            )
             if created:
                 return Response(status=status.HTTP_201_CREATED)
-            return Response({'detail':'Такая запись уже есть в корзине'}, status.HTTP_400_BAD_REQUEST)
-        else:
-            shopping_cart = ShoppingCart.objects.filter(user=request.user, recipe=recipe)
-            if shopping_cart.exists():
-                shopping_cart.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response({'detail':'Запись нет в корзине'}, status.HTTP_400_BAD_REQUEST)
-        
+            return Response({'detail': 'Такая запись уже есть в корзине'},
+                            status.HTTP_400_BAD_REQUEST
+                            )
+
+        shopping_cart = ShoppingCart.objects.filter(
+            user=request.user, recipe=recipe
+        )
+        if shopping_cart.exists():
+            shopping_cart.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({'detail': 'Запись нет в корзине'},
+                        status.HTTP_400_BAD_REQUEST
+                        )
+
     @action(methods=['GET'], detail=False,
             permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):

@@ -1,9 +1,11 @@
 import csv
 import os
-from django.core.management.base import BaseCommand
 
+from django.core.management.base import BaseCommand
 from foodgram.settings import BASE_DIR
+
 from recipes.models import Ingredient
+
 
 def ingredients_down(path):
     with open(path, encoding="utf-8") as csv_file:
