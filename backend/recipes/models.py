@@ -151,20 +151,22 @@ class UserRecipe(models.Model):
 
 class FavoriteRecipe(UserRecipe):
     """ Модель добавление в избраное. """
-
-    class Meta(UserRecipe.Meta):
-        default_related_name = 'favorites'
-        verbose_name = 'Избранный рецепт пользователя'
-        verbose_name_plural = 'Избранные рецепты пользователя'
+    user = models.ForeignKey(User,
+                             on_delete=models.CASCADE,
+                            )
+    recipe =  models.ForeignKey(Recipe,
+                             on_delete=models.CASCADE,
+                             )
 
 
 class ShoppingCart(UserRecipe):
     """ Модель рецепта для списка покупок пользователя."""
 
-    class Meta(UserRecipe.Meta):
-        default_related_name = 'shopping_list'
-        verbose_name = 'Рецепт для списка покупок пользователя'
-        verbose_name_plural = 'Рецепты для списка покупок пользователя'
+    user = models.ForeignKey(User,
+                             on_delete=models.CASCADE)
+    recipe =  models.ForeignKey(Recipe,
+                             on_delete=models.CASCADE,
+                             )
 
 
 class RecipeIngredient(models.Model):

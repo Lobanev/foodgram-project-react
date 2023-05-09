@@ -134,4 +134,4 @@ dmypy.json
 static/
 media/
 node_modules/
-.vscode
+.vscode/

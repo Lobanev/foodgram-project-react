@@ -250,7 +250,7 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         """
         RecipeIngredient.objects.bulk_create(
             [RecipeIngredient(
-                ingredient=Ingredient.objects.get(id=ingredient['id']),
+                ingredient= ingredient.get('id'),
                 recipe=recipe,
                 amount=ingredient['amount']
             ) for ingredient in ingredients]
@@ -288,48 +288,3 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         return RecipeReadSerializer(instance, context={
             'request': self.context.get('request')
         }).data
-
-
-class ShoppingCartSerializer(serializers.ModelSerializer):
-    """Сериализатор списка покупок, добавления и удаления. """
-
-    class Meta:
-        model = ShoppingCart
-        fields = ('user', 'recipe')
-
-    def validate(self, data):
-        user = data['user']
-        if user.shopping_list.filter(recipe=data['recipe']).exists():
-            raise serializers.ValidationError(
-                'Рецепт уже добавлен в корзину'
-            )
-        return data
-
-    def to_representation(self, instance):
-        return RecipeSnippetSerializer(instance, context=self.context).data
-
-
-class FavoriteSerializer(serializers.ModelSerializer):
-    """  Сериализатор избранного """
-
-    class Meta:
-        model = FavoriteRecipe
-        fields = ('user', 'recipe',)
-
-    def validate(self, data):
-        request = self.context.get('request')
-        if not request or request.user.is_anonymous:
-            return False
-        recipe = data['recipe']
-        if FavoriteRecipe.objects.filter(user=request.user,
-                                         recipe=recipe).exists():
-            raise ValidationError({
-                'errors': 'Рецепт уже добавлен в избранное.'
-            })
-        return data
-
-    def to_representation(self, instance):
-        return RecipeSnippetSerializer(
-            instance.recipe,
-            context={'request': self.context.get('request')}
-        ).data

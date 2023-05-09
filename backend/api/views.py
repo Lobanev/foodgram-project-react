@@ -125,7 +125,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         Генерирует PDF-файл со списком ингредиентов
         для рецептов из корзины пользователя.
         """
-        shop_recipes_ids = request.user.shoprecipes.all().values('recipe')
+        shop_recipes_ids = request.user.shoppingcart.all().values('recipe')
         ingredients = (
             RecipeIngredient.objects
             .filter(recipe_id__in=shop_recipes_ids)
