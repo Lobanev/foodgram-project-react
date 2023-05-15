@@ -1,7 +1,4 @@
-import datetime
-
-from django.db.models import Sum
-from django.http import FileResponse
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
@@ -21,7 +18,6 @@ from .permissions import AuthorPermission
 from .serializers import (CreateRecipeSerializer, CustomUserSerializer,
                           FollowSerializer, IngredientSerializer,
                           RecipeReadSerializer, TagSerializer)
-from .utils import PDFGenerator
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -29,7 +25,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (AllowAny, )
-    pagination_class = None
+    # pagination_class = None
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
@@ -37,7 +33,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (IsAuthenticatedOrReadOnly, )
-    pagination_class = None
+    # pagination_class = None
     filter_backends = (IngredientFilter, )
     search_fields = ('^name', )
 
@@ -122,40 +118,40 @@ class RecipeViewSet(viewsets.ModelViewSet):
             permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
         """
-        Генерирует PDF-файл со списком ингредиентов
+        Список ингредиентов
         для рецептов из корзины пользователя.
         """
-        shop_recipes_ids = request.user.shoppingcart.all().values('recipe')
         ingredients = (
             RecipeIngredient.objects
-            .filter(recipe_id__in=shop_recipes_ids)
-            .select_related('ingredient')
-            .values('ingredient__name')
-            .annotate(total=Sum('amount'))
-            .values(
-                'ingredient__name',
-                'total',
-                'ingredient__measurement_unit'
-            )
+            .filter(recipe__shoppingcart__user=request.user)
+            .values('ingredient__name',
+                    'ingredient__measurement_unit', 'amount')
         )
+        goods = {}
+        for good in ingredients:
+            name = good.get('ingredient__name')
+            unit = good.get('ingredient__measurement_unit')
+            amount = good.get('amount')
+            key = f'{name}|{unit}'
+            goods.setdefault(key, amount)
+            if key in goods.keys():
+                goods[key] += amount
+            else:
+                goods[key] = amount
+        text = [f'Cписок покупок пользователя:\n {request.user.first_name}']
+        for name_and_unit, amount in goods.items():
+            name, unit = name_and_unit.split('|')
+            text.append(f'\n-- {name} - {amount} в ({unit})')
+        filename = "Shopping_Cart_list.txt"
+        response = HttpResponse(text, content_type='text/plain')
+        response['Content-Disposition'] = f'attachment; filename={filename}'
+        return response
 
-        ingredients_list = []
-        for ingredient in ingredients:
-            ingredients_list.append(
-                f'{ingredient.get("ingredient__name").capitalize()} '
-                f'({ingredient.get("ingredient__measurement_unit")}) — '
-                f'{ingredient.get("total")}'
-            )
-        return FileResponse(
-            PDFGenerator(ingredients_list),
-            as_attachment=True,
-            filename=f'{request.user} shoplist {datetime.date.today()}.pdf'
-        )
 
-
-class FollowViewSet(UserViewSet):
+class CustomUserViewSet(UserViewSet):
     """
-    Класс представления для подписок пользователей на других пользователей.
+    Класс представления пользователя.
+    И подписок пользователей на других пользователей.
     """
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
@@ -166,7 +162,7 @@ class FollowViewSet(UserViewSet):
         methods=['post', 'delete'],
         permission_classes=[IsAuthenticated],
     )
-    def subscribe(self, request, pk):
+    def subscribe(self, request, id):
         """
         Подписывает пользователя request.user на
         пользователя с идентификатором pk,
@@ -175,13 +171,16 @@ class FollowViewSet(UserViewSet):
         если метод DELETE.
         """
         user = request.user
-        author = get_object_or_404(User, pk=pk)
+        author = get_object_or_404(User, pk=id)
 
         if request.method == 'POST':
             serializer = FollowSerializer(
                 author, data=request.data, context={'request': request}
             )
             serializer.is_valid(raise_exception=True)
+            if Follow.objects.filter(user=user, author=author).exists():
+                return Response(
+                    "Вы уже подписаны", status=status.HTTP_400_BAD_REQUEST)
             Follow.objects.create(user=user, author=author)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 

@@ -2,7 +2,6 @@ from colorfield.fields import ColorField
 from django.core.validators import (MaxValueValidator, MinValueValidator,
                                     RegexValidator)
 from django.db import models
-from django.db.models import UniqueConstraint
 
 from users.models import User
 
@@ -45,8 +44,7 @@ class Ingredient(models.Model):
     """ Модель ингридиента для рецепта """
     name = models.CharField(
         max_length=200,
-        verbose_name='Название',
-        db_index=True
+        verbose_name='Название'
     )
     measurement_unit = models.CharField(
         max_length=200,
@@ -122,51 +120,44 @@ class Recipe(models.Model):
         return self.name
 
 
-class UserRecipe(models.Model):
-    """Абстрактная модель списка рецептов пользователя."""
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        verbose_name='Пользователь',
+# class UserRecipe(models.Model):
+#     """Абстрактная модель списка рецептов пользователя."""
+#     user = models.ForeignKey(
+#         User,
+#         on_delete=models.CASCADE,
+#         verbose_name='Пользователь',
 
-    )
-    recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE,
-        verbose_name='Рецепт',
-    )
+#     )
+#     recipe = models.ForeignKey(
+#         Recipe,
+#         on_delete=models.CASCADE,
+#         verbose_name='Рецепт',
+#     )
 
-    class Meta:
-        abstract = True
-        constraints = [
-            UniqueConstraint(
-                fields=('user', 'recipe'),
-                name='%(app_label)s_%(class)s_unique'
-            )
-        ]
+#     class Meta:
+#         abstract = True
+#         constraints = [
+#             UniqueConstraint(
+#                 fields=('user', 'recipe'),
+#                 name='%(app_label)s_%(class)s_unique'
+#             )
+#         ]
 
-    def __str__(self):
-        return f'{self.user} :: {self.recipe}'
+#     def __str__(self):
+#         return f'{self.user} :: {self.recipe}'
 
 
-class FavoriteRecipe(UserRecipe):
+class FavoriteRecipe(models.Model):
     """ Модель добавление в избраное. """
-    user = models.ForeignKey(User,
-                             on_delete=models.CASCADE,
-                            )
-    recipe =  models.ForeignKey(Recipe,
-                             on_delete=models.CASCADE,
-                             )
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
 
 
-class ShoppingCart(UserRecipe):
+class ShoppingCart(models.Model):
     """ Модель рецепта для списка покупок пользователя."""
 
-    user = models.ForeignKey(User,
-                             on_delete=models.CASCADE)
-    recipe =  models.ForeignKey(Recipe,
-                             on_delete=models.CASCADE,
-                             )
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
 
 
 class RecipeIngredient(models.Model):
@@ -182,7 +173,7 @@ class RecipeIngredient(models.Model):
         on_delete=models.CASCADE,
         related_name='recipe_ingredients'
     )
-    amount = models.PositiveSmallIntegerField(
+    amount = models.IntegerField(
         validators=[
             MinValueValidator(1, 'Минимальное количество - 1.')
         ],
