@@ -17,7 +17,8 @@ from .pagination import CustomPagination
 from .permissions import AuthorPermission
 from .serializers import (CreateRecipeSerializer, CustomUserSerializer,
                           FollowSerializer, IngredientSerializer,
-                          RecipeReadSerializer, TagSerializer)
+                          RecipeReadSerializer, RecipeSnippetSerializer,
+                          TagSerializer)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -70,7 +71,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 user=request.user, recipe=recipe
             )
             if created:
-                return Response(status=status.HTTP_201_CREATED)
+                serializer = RecipeSnippetSerializer(recipe)
+                return Response(serializer.data,
+                                status=status.HTTP_201_CREATED)
             return Response({'detail': 'Такая запись уже есть в избранном'},
                             status.HTTP_400_BAD_REQUEST
                             )
@@ -99,7 +102,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 user=request.user, recipe=recipe
             )
             if created:
-                return Response(status=status.HTTP_201_CREATED)
+                serializer = RecipeSnippetSerializer(recipe)
+                return Response(serializer.data,
+                                status=status.HTTP_201_CREATED)
             return Response({'detail': 'Такая запись уже есть в корзине'},
                             status.HTTP_400_BAD_REQUEST
                             )
@@ -133,7 +138,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             unit = good.get('ingredient__measurement_unit')
             amount = good.get('amount')
             key = f'{name}|{unit}'
-            goods.setdefault(key, amount)
             if key in goods.keys():
                 goods[key] += amount
             else:

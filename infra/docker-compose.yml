@@ -25,7 +25,7 @@ services:
 
   frontend:
     image: djakomo/frontend:latest
-   # build: ../frontend
+    #build: ../frontend
     volumes:
       - ../frontend/:/app/result_build/
     depends_on:
